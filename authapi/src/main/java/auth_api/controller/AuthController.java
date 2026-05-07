@@ -1,5 +1,7 @@
 package auth_api.controller;
 
+import auth_api.dto.AuthResponse;
+import auth_api.dto.LoginRequest;
 import auth_api.dto.RegisterRequest;
 import auth_api.service.AuthService;
 import lombok.RequiredArgsConstructor;
@@ -21,5 +23,15 @@ public class AuthController {
         authService.register(request);
 
         return ResponseEntity.ok("User registered successfully");
+    }
+
+    @PostMapping("/login")
+    public ResponseEntity<AuthResponse> login(
+            @RequestBody LoginRequest request
+    ) {
+
+        return ResponseEntity.ok(
+                authService.login(request)
+        );
     }
 }
