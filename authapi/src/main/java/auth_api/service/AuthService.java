@@ -1,19 +1,24 @@
 package auth_api.service;
 
+import auth_api.dto.AuthResponse;
+import auth_api.dto.LoginRequest;
 import auth_api.dto.RegisterRequest;
+
+import auth_api.model.RefreshToken;
 import auth_api.model.Role;
 import auth_api.model.User;
+
 import auth_api.repository.RoleRepository;
 import auth_api.repository.UserRepository;
+
+import auth_api.security.JwtService;
+
 import lombok.RequiredArgsConstructor;
+
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.util.Set;
-
-import auth_api.dto.AuthResponse;
-import auth_api.dto.LoginRequest;
-import auth_api.security.JwtService;
 
 @Service
 @RequiredArgsConstructor
@@ -24,6 +29,8 @@ public class AuthService {
     private final PasswordEncoder passwordEncoder;
 
     private final JwtService jwtService;
+
+    private final RefreshTokenService refreshTokenService;
 
     public void register(RegisterRequest request) {
 
@@ -42,20 +49,29 @@ public class AuthService {
 
         userRepository.save(user);
     }
-    public AuthResponse login(LoginRequest request) {
+public AuthResponse login(LoginRequest request) {
 
     User user = userRepository.findByEmail(request.getEmail())
-            .orElseThrow(() -> new RuntimeException("Invalid credentials"));
+            .orElseThrow(() ->
+                    new RuntimeException("Invalid credentials"));
 
     if (!passwordEncoder.matches(
             request.getPassword(),
             user.getPassword()
     )) {
+
         throw new RuntimeException("Invalid credentials");
     }
 
-    String token = jwtService.generateToken(user.getEmail());
+    String accessToken =
+            jwtService.generateToken(user.getEmail());
 
-    return new AuthResponse(token);
+    RefreshToken refreshToken =
+            refreshTokenService.createRefreshToken(user);
+
+    return new AuthResponse(
+            accessToken,
+            refreshToken.getToken()
+    );
 }
 }
